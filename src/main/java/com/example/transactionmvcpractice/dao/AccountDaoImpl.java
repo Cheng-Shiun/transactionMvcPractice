@@ -1,5 +1,6 @@
 package com.example.transactionmvcpractice.dao;
 
+import com.example.transactionmvcpractice.dto.AccountRequestDto;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Component;
@@ -17,21 +18,22 @@ public class AccountDaoImpl implements AccountDao{
 
 
     @Override
-    public void transfer(Integer fromAccountId, Integer toAccountId, Integer money) {
+    public void transfer(Integer from, Integer to, Integer money) {
         //轉出帳號 ->扣款
-        String outSql = "UPDATE account SET balance = balance - :money WHERE id = :fromAccountId";
+        String outSql = "UPDATE account SET balance = balance - :money WHERE id = :from";
 
         Map<String, Object> outMap = new HashMap<>();
         outMap.put("money", money);
-        outMap.put("fromAccountId", fromAccountId);
+        outMap.put("from", from);
         namedParameterJdbcTemplate.update(outSql, outMap);
+        Map<String, Object> map = new HashMap<>();
 
         //轉入帳號 ->入帳
-        String inSql = "UPDATE account SET balance = balance + :money WHERE id = :toAccountId";
+        String inSql = "UPDATE account SET balance = balance + :money WHERE id = :to";
 
         Map<String, Object> inMap = new HashMap<>();
         inMap.put("money", money);
-        inMap.put("toAccountId", toAccountId);
+        inMap.put("to", to);
         namedParameterJdbcTemplate.update(inSql, inMap);
     }
 
@@ -46,6 +48,19 @@ public class AccountDaoImpl implements AccountDao{
     @Override
     public int deposit(Integer accountId, Integer money) {
         String sql = "UPDATE account SET balance = balance + :money WHERE id = :accountId";
+        Map<String, Object> map = new HashMap<>();
+        map.put("money", money);
+        map.put("accountId", accountId);
+        namedParameterJdbcTemplate.update(sql, map);
+
+        //查詢更新後的balance值 ->給前端
+        String balanceSql = "SELECT balance FROM account WHERE id = :accountId";
+        return namedParameterJdbcTemplate.queryForObject(balanceSql, map, Integer.class);
+    }
+
+    @Override
+    public int withdraw(Integer accountId, Integer money) {
+        String sql = "UPDATE account SET balance = balance - :money WHERE id = :accountId";
         Map<String, Object> map = new HashMap<>();
         map.put("money", money);
         map.put("accountId", accountId);
